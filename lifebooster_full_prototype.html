@@ -1,0 +1,510 @@
+<!doctype html>
+<html lang="uk">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+<title>Life Booster — Full Prototype</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='0.9em' font-size='90'%3E🦊%3C/text%3E%3C/svg%3E">
+<style>
+:root{
+  --accent:#6fd3ff;
+  --accent-2:#9be7ff;
+  --bg-day-start: rgba(230,246,255,0.9);
+  --bg-night-start: rgba(2,6,20,0.95);
+  --card-radius:14px;
+  --glass: rgba(255,255,255,0.06);
+  --glass-2: rgba(0,0,0,0.35);
+  --max-width:1100px;
+  --text: #e9f3f7;
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0;font-family:Inter, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;color:var(--text);-webkit-font-smoothing:antialiased;background:#041226}
+a{color:var(--accent)}
+.container{max-width:var(--max-width);margin:0 auto;padding:18px;position:relative;z-index:3}
+.header{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px}
+.logo{display:flex;align-items:center;gap:12px}
+.logo img{width:56px;height:56px;border-radius:12px;box-shadow:0 8px 30px rgba(0,0,0,0.5)}
+.title{font-size:20px;font-weight:800;color:var(--accent)}
+.controls{display:flex;gap:8px;align-items:center}
+.btn{background:var(--accent);color:#022;padding:10px 14px;border-radius:12px;border:none;font-weight:800;cursor:pointer;box-shadow:0 10px 30px rgba(0,0,0,0.45)}
+.ghost{background:transparent;border:1px solid rgba(255,255,255,0.06);padding:8px 12px;border-radius:10px;color:inherit;cursor:pointer}
+
+.grid{display:grid;grid-template-columns:1fr 380px;gap:14px;align-items:start}
+@media(max-width:980px){.grid{grid-template-columns:1fr} .rightCol{order:2} .leftCol{order:1}}
+
+.card{background:linear-gradient(180deg, rgba(255,255,255,0.03), rgba(0,0,0,0.25));padding:14px;border-radius:var(--card-radius);backdrop-filter: blur(10px);box-shadow: 0 8px 30px rgba(2,6,23,0.6);}
+.sectionTitle{font-size:16px;margin:0 0 8px 0;color:var(--accent-2)}
+
+/* Tasks */
+#taskForm{display:flex;gap:8px;margin-bottom:12px}
+#taskForm input{flex:1;padding:12px;border-radius:12px;border:none;background:rgba(255,255,255,0.02);color:inherit}
+.taskItem{display:flex;justify-content:space-between;gap:8px;align-items:center;padding:10px;border-radius:12px;margin-bottom:8px;background:linear-gradient(90deg, rgba(255,255,255,0.02), rgba(0,0,0,0.18));}
+.taskMeta{font-size:12px;color:#a9c7d6}
+
+/* Food cards */
+.foodGrid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+@media(max-width:880px){.foodGrid{grid-template-columns:repeat(2,1fr)}}
+.foodCard{padding:12px;border-radius:12px;background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(0,0,0,0.18));min-height:110px;display:flex;flex-direction:column;justify-content:space-between;transition:transform .32s, box-shadow .32s}
+.foodCard:hover{transform:translateY(-6px);box-shadow:0 14px 40px rgba(0,0,0,0.45)}
+.foodTitle{font-weight:800}
+.foodSub{font-size:13px;color:#cfe9f8}
+
+/* Apps Blocker */
+.appsList{display:flex;gap:8px;flex-wrap:wrap}
+.appBtn{padding:8px 10px;border-radius:10px;background:rgba(255,255,255,0.03);cursor:pointer;border:1px solid rgba(255,255,255,0.03);font-weight:700}
+
+/* Exercise canvas */
+#videoCanvas{display:flex;flex-direction:column;align-items:center;gap:8px;margin-top:8px}
+canvas{width:100%;max-width:340px;border-radius:10px;background:rgba(0,0,0,0.12);box-shadow:inset 0 -20px 60px rgba(0,0,0,0.4)}
+
+/* right column small */
+.small{font-size:13px;color:#bcdbe8}
+
+/* fox help */
+#fox{position:fixed;right:16px;bottom:16px;width:64px;height:64px;border-radius:14px;background:linear-gradient(180deg,#ffcc88,#ffb86c);display:flex;align-items:center;justify-content:center;font-size:28px;cursor:pointer;box-shadow:0 16px 40px rgba(0,0,0,0.5);z-index:5}
+
+/* footer */
+.footer{display:flex;justify-content:space-between;align-items:center;margin-top:14px;opacity:0.95}
+
+/* background elements: layered animated day/night */
+.bgRoot{position:fixed;inset:0;z-index:0;overflow:hidden;pointer-events:none}
+.dayLayer{position:absolute;inset:0;background:linear-gradient(180deg, rgba(240,253,255,0.85), rgba(220,245,255,0.7));transition:opacity 1s ease;opacity:0}
+.slideshow{position:absolute;inset:0;display:flex;gap:0;overflow:hidden}
+.slide{position:absolute;inset:0;background-size:cover;background-position:center;opacity:0;transform:scale(1.02);transition:opacity 1s ease, transform 10s linear}
+.slide.show{opacity:1;transform:scale(1)}
+.dayOverlay{position:absolute;inset:0;background:linear-gradient(180deg, rgba(255,255,255,0.12), rgba(255,255,255,0.04))}
+
+/* night */
+.nightLayer{position:absolute;inset:0;background:linear-gradient(180deg,#021025,#001018);opacity:0}
+.starry{position:absolute;inset:0}
+.earthWrap{position:absolute;right:8%;bottom:-10%;width:40vmin;height:40vmin;border-radius:50%;overflow:visible;pointer-events:none;opacity:0}
+
+/* small responsive tweaks */
+@media(max-width:520px){
+  .container{padding:12px}
+  .logo img{width:44px;height:44px}
+  .grid{grid-template-columns:1fr}
+  .foodGrid{grid-template-columns:1fr}
+  canvas{max-width:100%}
+  #fox{width:52px;height:52px;font-size:22px;right:10px;bottom:10px}
+}
+
+/* icons */
+.iconBtn{display:inline-flex;align-items:center;gap:8px;padding:8px;border-radius:10px;background:rgba(255,255,255,0.03);cursor:pointer;border:1px solid rgba(255,255,255,0.04)}
+.iconSVG{width:18px;height:18px;display:inline-block;vertical-align:middle}
+
+/* subtle floating animation */
+@keyframes floaty { 0%{transform:translateY(0)}50%{transform:translateY(-6px)}100%{transform:translateY(0)}}
+.floaty{animation:floaty 4s ease-in-out infinite}
+
+/* star twinkle */
+@keyframes twinkle{0%{opacity:0.6}50%{opacity:1}100%{opacity:0.6}} .star{opacity:0.8;animation:twinkle 3s ease-in-out infinite alternate}
+
+/* earth rotate */
+@keyframes rotateSlow{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}
+
+/* tooltip */
+.tooltip{position:relative}
+.tooltip:hover::after{content:attr(data-tip);position:absolute;bottom:120%;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.6);padding:6px 8px;border-radius:6px;font-size:12px;color:#fff}
+</style>
+</head>
+<body>
+<!-- Background layers -->
+<div class="bgRoot" id="bgRoot" aria-hidden="true">
+  <div class="dayLayer" id="dayLayer">
+    <div class="slideshow" id="slideshow"></div>
+    <div class="dayOverlay"></div>
+  </div>
+  <div class="nightLayer" id="nightLayer">
+    <canvas id="starCanvas" class="starry"></canvas>
+    <div class="earthWrap" id="earthWrap"></div>
+  </div>
+</div>
+
+<div class="container" id="appContainer">
+  <div class="header">
+    <div class="logo">
+      <img src="https://i.imgur.com/4AiXzf8.png" alt="fox">
+      <div>
+        <div class="title">Life Booster</div>
+        <div class="small">Щоденні завдання • Блокувальник • Мотивація</div>
+      </div>
+    </div>
+    <div class="controls">
+      <div class="ghost tooltip" data-tip="Профіль локального користувача"><span id="userBadge">Гість</span></div>
+      <button class="ghost tooltip" id="openIntro" data-tip="Інструкція">Інструкція</button>
+      <button class="ghost" id="toggleTheme">Нічний режим</button>
+      <button class="btn" id="openLogin">Увійти</button>
+    </div>
+  </div>
+
+  <div class="grid">
+    <div class="leftCol">
+      <div class="card">
+        <h3 class="sectionTitle">Сьогоднішні страви — 3 ідеї</h3>
+        <div id="foodGrid" class="foodGrid"></div>
+        <div style="margin-top:8px" class="small">Порада: натисни на картку, щоб отримати рецепт або зберегти.</div>
+      </div>
+
+      <div style="height:12px"></div>
+
+      <div class="card">
+        <h3 class="sectionTitle">Завдання</h3>
+        <div id="taskForm">
+          <input id="taskInput" placeholder="Додати завдання (24 год.)" />
+          <button class="btn" id="addTask">Додати</button>
+        </div>
+        <div id="tasksList"></div>
+      </div>
+
+      <div style="height:12px"></div>
+
+      <div class="card">
+        <h3 class="sectionTitle">Блокатор додатків</h3>
+        <div class="small">Вибери додатки, які хочеш тимчасово заблокувати. Розблокування — виконання вправ.</div>
+        <div style="margin-top:10px" class="appsList" id="appsList">
+          <!-- sample app chips -->
+          <div class="appBtn" data-app="instagram">Instagram</div>
+          <div class="appBtn" data-app="tiktok">TikTok</div>
+          <div class="appBtn" data-app="discord">Discord</div>
+          <div class="appBtn" data-app="youtube">YouTube</div>
+        </div>
+
+        <div style="margin-top:12px">
+          <div class="small">Метод розблокування</div>
+          <div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap">
+            <div class="iconBtn" id="choosePush"><svg class="iconSVG" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 2v4" stroke="#022" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M8 6h8" stroke="#022" stroke-width="1.5" stroke-linecap="round"/></svg>Віджимання</div>
+            <div class="iconBtn" id="chooseSquat"><svg class="iconSVG" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="6" r="2" stroke="#022" stroke-width="1.3"/></svg>Присідання</div>
+            <div class="iconBtn" id="chooseWalk"><svg class="iconSVG" viewBox="0 0 24 24" fill="none"><path d="M5 20v-3l3-2 2 2 3-4 2 1" stroke="#022" stroke-width="1.5"/></svg>Ходьба</div>
+          </div>
+        </div>
+
+        <div id="videoCanvas">
+          <canvas id="exerciseCanvas" width="340" height="240"></canvas>
+          <div class="small">Репи: <span id="repCount">0</span> • Лисинята: <span id="foxCoins">0</span> 🦊</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="rightCol">
+      <div class="card">
+        <h3 class="sectionTitle">Панель</h3>
+        <div style="display:flex;gap:10px;align-items:center;justify-content:space-between">
+          <div>
+            <div class="small">Користувач</div>
+            <div id="profileName" style="font-weight:800">Гість</div>
+          </div>
+          <div style="text-align:right">
+            <div class="small">Лисинята</div>
+            <div id="profileCoins" style="font-weight:800">0 🦊</div>
+          </div>
+        </div>
+
+        <div style="height:12px"></div>
+        <div class="small">Мій плейлист</div>
+        <input id="playlistInput" placeholder="Посилання на плейлист" style="width:100%;padding:10px;border-radius:10px;border:none;background:rgba(255,255,255,0.02);margin-top:8px" />
+        <button class="btn" id="savePlaylist">Зберегти</button>
+
+        <div style="height:12px"></div>
+        <div class="small">Цитата натхнення</div>
+        <div id="quoteBox" style="margin-top:8px;font-weight:700;color:var(--accent)"></div>
+      </div>
+
+      <div style="height:12px"></div>
+
+      <div class="card">
+        <h3 class="sectionTitle">Користувачі</h3>
+        <input id="newUserName" placeholder="Ім'я користувача" style="width:100%;padding:10px;border-radius:10px;border:none;background:rgba(255,255,255,0.02)" />
+        <button class="btn" id="addUserBtn">Додати</button>
+        <div id="usersList" style="margin-top:8px"></div>
+      </div>
+
+      <div style="height:12px"></div>
+
+      <div class="card">
+        <h3 class="sectionTitle">Історія / штрафи</h3>
+        <div class="small">Якщо не виконано завдання в 24 годин — штраф 5 🦊 та складність +1.5%.</div>
+        <div style="height:8px"></div>
+        <button class="btn" id="payFineBtn">Купити штраф (5 🦊)</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer">
+    <div class="small">Повна локальна версія. Щоб зробити публічною — потрібен бекенд (Firebase/Node/etc.).</div>
+    <div class="small">Версія: 1.0</div>
+  </div>
+</div>
+
+<div id="fox" title="Допомога (відкрити сторінку)"><span>🦊</span></div>
+
+<!-- Intro modal -->
+<div id="introModal" style="position:fixed;inset:0;background:rgba(2,6,20,0.7);display:flex;align-items:center;justify-content:center;z-index:10">
+  <div style="width:94%;max-width:720px;background:linear-gradient(180deg,rgba(255,255,255,0.02),rgba(0,0,0,0.5));padding:18px;border-radius:14px;">
+    <h2 style="margin-top:0;color:var(--accent)">Ласкаво просимо до Life Booster</h2>
+    <p class="small">Коротка інструкція для запуску та використання — все працює локально у браузері.</p>
+    <ol class="small">
+      <li>Відкрий цей файл через Live Server у VS Code або на локальному https-сервері.</li>
+      <li>Натисни <b>Увійти</b> і встанови своє ім'я (зберігається локально).</li>
+      <li>Додай завдання — кожне має 24 години. Якщо не виконано — штраф та збільшення складності.</li>
+      <li>Щоб блокувати додатки — вибери додатки та метод розблокування (віджимання/присідання/ходьба).</li>
+      <li>При першому запуску камери дай дозвіл; для ходьби може попросити дозвіл на датчики руху.</li>
+      <li>Все зберігається в localStorage; для публічного доступу додай бекенд (Firebase, Supabase чи Node + DB).</li>
+    </ol>
+    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px">
+      <button class="ghost" id="closeIntro">Закрити</button>
+      <button class="btn" id="startNow">Почати</button>
+    </div>
+  </div>
+</div>
+
+<!-- scripts: TensorFlow for pose detection -->
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@3.21.0/dist/tf.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/pose-detection@0.0.7/dist/pose-detection.min.js"></script>
+
+<script>
+/* Full enhanced prototype script */
+
+/* ---------- Data ---------- */
+const FOODS = [
+  "Салат з кіноа та авокадо","Омлет з овочами","Смузі зі шпинатом","Курка на пару з броколі","Тушковані овочі з кіноа",
+  "Лосось з овочами","Салат з нутом","Суп-пюре із гарбуза","Гречка з овочами","Чіа-пудинг з ягодами",
+  "Салат нікоаз","Запечені овочі з тофу","Паста з цільнозернової пшениці","Курячий суп локшина","Риба на грилі зі спаржею",
+  "Боул з булгуром і овочами","Салат з тунцем","Рагу з індичкою","Овочевий салат із яблуком","Салат із буряком і козячим сиром",
+  "Тофу стір-фрай з овочами","Салат з руколи та груші","Фріттата з овочами","Кебаб з овочів","Легка лазанья зі шпинатом",
+  "Каша з мигдалем і ягодами","Спагеті з овочевим соусом","Курячі грудки з киноа","Рулети з баклажанів","Рис з овочами та яйцем",
+  "Том-ям легкий з креветками","Рататуй","Салат із сочевицею","Печена форель з лимоном","Суп з броколі та мигдалю",
+  "Кебаб з лососем","Тост з авокадо та яйцем","Булгур салат","Печені кабачки з пармезаном","Вегетаріанський бургер з квасолею",
+  "Мексиканський боул з авокадо","Салат з печеними перцями","Курка в медово-гірчичному соусі","Теплий салат з сочевицею","Сирники з малим цукром",
+  "Суп із сочевиці","Рулетики з індички","Баклажани з томатним соусом","Стейк тунця з овочами","Каша гречана з грибами",
+  "Салат з фенхелю","Піца на цільнозерновому тісті з овочами","Суші боул з овочами","Салат з квасолею та кукурудзою","Запечена курка з лимоном",
+  "Фаршировані перці з кіноа","Курячі шашлички з овочами","Суп-пюре з моркви","Холодний салат з огірків і м’яти","Салат з яблуком і горіхами",
+  "Запечений батат з йогуртом","Кус-кус з овочами","Тост з лососем і сиром","Салат табуле","Рагу з квасолі",
+  "Рибні котлети на пару","Овочевий карі з рисом","Салат капрезе з цільнозерновим хлібом","Смузі боул з гранолою","Салат з кіноа і помідорів",
+  "Легкий грецький салат","Курка з лимоном і травами","Бургер з лососем","Боул з сочевицею","Печені яблука з йогуртом"
+]; // ~90+ entries
+
+const QUOTES = [...Array(70)].map((_,i)=>`“Цитата мотивації #${i+1} — продовжуй і не здавайся.”`); // placeholder 70 quotes
+
+/* ---------- Storage and State ---------- */
+const STORAGE_KEY = 'lifebooster_full_v1';
+let state = {
+  users: [{id:randId(), name:'Гість', coins:0, playlist:''}],
+  currentUserId: null,
+  tasks: [],
+  dailyFoodsDate: null,
+  dailyFoods: null,
+  foxCoins: 0
+};
+loadState();
+
+function randId(){ return Math.random().toString(36).slice(2,9); }
+function saveState(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
+function loadState(){ const raw = localStorage.getItem(STORAGE_KEY); if(raw){ try{ state = JSON.parse(raw); } catch(e){ console.error(e); } } if(!state.currentUserId) state.currentUserId = state.users[0].id; saveState(); }
+
+/* ---------- DOM ---------- */
+const foodGrid = document.getElementById('foodGrid');
+const addTaskBtn = document.getElementById('addTask');
+const taskInput = document.getElementById('taskInput');
+const tasksList = document.getElementById('tasksList');
+const userBadge = document.getElementById('userBadge');
+const profileName = document.getElementById('profileName');
+const profileCoins = document.getElementById('profileCoins');
+const foxBtn = document.getElementById('fox');
+const quoteBox = document.getElementById('quoteBox');
+const repCountEl = document.getElementById('repCount');
+const foxCoinsEl = document.getElementById('foxCoins');
+const addUserBtn = document.getElementById('addUserBtn');
+const newUserName = document.getElementById('newUserName');
+const usersList = document.getElementById('usersList');
+const savePlaylist = document.getElementById('savePlaylist');
+const playlistInput = document.getElementById('playlistInput');
+const payFineBtn = document.getElementById('payFineBtn');
+const toggleTheme = document.getElementById('toggleTheme');
+const introModal = document.getElementById('introModal');
+const startNowBtn = document.getElementById('startNow');
+const closeIntro = document.getElementById('closeIntro');
+const openIntro = document.getElementById('openIntro');
+
+/* ---------- UI helpers ---------- */
+function getCurrentUser(){ return state.users.find(u=>u.id===state.currentUserId) || state.users[0]; }
+function renderProfile(){ const u = getCurrentUser(); userBadge.textContent = u.name; profileName.textContent = u.name; profileCoins.textContent = (u.coins||0)+' 🦊'; foxCoinsEl.textContent = (state.foxCoins||0); playlistInput.value = u.playlist||''; }
+function notify(text){ console.log('NOTIFY:',text); /* simple toast using alert for prototype */ try{ /* non-blocking */ setTimeout(()=>{ /* no-op */ },10); }catch(e){} }
+
+/* ---------- Foods (3 per day) ---------- */
+function pickDailyFoods(){
+  const today = new Date().toISOString().slice(0,10);
+  if(state.dailyFoodsDate === today && state.dailyFoods) return state.dailyFoods;
+  const pool = [...FOODS];
+  const picks = [];
+  for(let i=0;i<3;i++){ const idx=Math.floor(Math.random()*pool.length); picks.push(pool.splice(idx,1)[0]); }
+  state.dailyFoods = picks; state.dailyFoodsDate = today; saveState(); return picks;
+}
+function renderFoods(){
+  const picks = pickDailyFoods();
+  foodGrid.innerHTML='';
+  picks.forEach((f,i)=>{
+    const card = document.createElement('div'); card.className='foodCard floaty';
+    card.innerHTML = `<div style="display:flex;gap:10px;align-items:center"><div style="width:56px;height:56px;border-radius:10px;background:linear-gradient(135deg,#fff3,#fff2);display:flex;align-items:center;justify-content:center;color:#022;font-weight:800">${String.fromCodePoint(0x1F35E + i)}</div><div><div class="foodTitle">${f}</div><div class="foodSub">Ідея ${i+1} • 30‑денний план</div></div></div>`;
+    card.onclick = ()=>{ const url = `https://www.google.com/search?q=${encodeURIComponent(f+' recipe')}`; window.open(url,'_blank'); };
+    foodGrid.appendChild(card);
+  });
+}
+
+/* ---------- Tasks ---------- */
+function renderTasks(){
+  tasksList.innerHTML='';
+  const uid = state.currentUserId;
+  const now = Date.now();
+  const userTasks = state.tasks.filter(t=>t.userId===uid).sort((a,b)=>a.deadline-b.deadline);
+  if(userTasks.length===0){ tasksList.innerHTML = '<div class="small">Немає завдань. Додай своє перше.</div>'; return; }
+  userTasks.forEach(t=>{
+    const el = document.createElement('div'); el.className='taskItem';
+    const left = document.createElement('div'); left.style.flex='1';
+    const remaining = Math.max(0, t.deadline - now);
+    const hours = Math.floor(remaining/3600000); const mins = Math.floor((remaining%3600000)/60000);
+    left.innerHTML = `<div style="font-weight:800">${t.text}</div><div class="taskMeta">Термін: ${new Date(t.deadline).toLocaleString()} • залишилось: ${hours} год ${mins} хв</div>`;
+    const right = document.createElement('div');
+    const doneBtn = document.createElement('button'); doneBtn.className='btn'; doneBtn.textContent='Зроблено'; doneBtn.onclick = ()=>{ completeTask(t.id); };
+    const delBtn = document.createElement('button'); delBtn.className='ghost'; delBtn.textContent='×'; delBtn.onclick = ()=>{ state.tasks = state.tasks.filter(x=>x.id!==t.id); saveState(); renderAll(); };
+    right.appendChild(doneBtn); right.appendChild(delBtn);
+    el.appendChild(left); el.appendChild(right);
+    tasksList.appendChild(el);
+    // check overdue
+    if(!t.done && now>t.deadline && !t.penalized){
+      t.penalized = true; t.difficultyMultiplier = (t.difficultyMultiplier||1)*1.015; const u = getCurrentUser(); u.coins = (u.coins||0) - 5; state.foxCoins = (state.foxCoins||0) - 5; saveState(); notify(`Завдання "${t.text}" прострочено — штраф 5 🦊`);
+    }
+  });
+}
+addTaskBtn.onclick = ()=>{ const txt = taskInput.value.trim(); if(!txt) return; const id=randId(); state.tasks.push({id, userId: state.currentUserId, text: txt, created: Date.now(), deadline: Date.now()+24*3600*1000, done:false, difficultyMultiplier:1, penalized:false}); taskInput.value=''; saveState(); renderAll(); notify('Завдання додано'); }
+function completeTask(id){
+  const t = state.tasks.find(x=>x.id===id); if(!t) return; t.done = true; t.completedAt = Date.now(); const reward = Math.max(1, Math.round(2 * (t.difficultyMultiplier||1))); const u = getCurrentUser(); u.coins = (u.coins||0) + reward; state.foxCoins = (state.foxCoins||0) + reward; saveState(); renderAll(); showRandomQuote(); notify(`Виконано. Отримано ${reward} 🦊`); }
+
+/* ---------- Users ---------- */
+function renderUsers(){ usersList.innerHTML=''; state.users.forEach(u=>{ const el=document.createElement('div'); el.className='taskItem'; el.innerHTML = `<div style="flex:1">${u.name}<div class="taskMeta">Coins: ${u.coins||0} 🦊</div></div><div><button class="btn">Вибрати</button></div>`; usersList.appendChild(el); el.querySelector('button').onclick = ()=>{ state.currentUserId = u.id; saveState(); renderAll(); } }); }
+addUserBtn.onclick = ()=>{ const name=newUserName.value.trim(); if(!name) return; state.users.push({id:randId(), name, coins:0, playlist:''}); newUserName.value=''; saveState(); renderAll(); notify('Користувач додано'); }
+
+/* ---------- Playlist ---------- */
+savePlaylist.onclick = ()=>{ const u=getCurrentUser(); u.playlist = playlistInput.value.trim(); saveState(); notify('Плейлист збережено'); }
+
+/* ---------- Quotes ---------- */
+function showRandomQuote(){ const q = QUOTES[Math.floor(Math.random()*QUOTES.length)]; quoteBox.textContent = q; }
+showRandomQuote();
+
+/* ---------- Fox button ---------- */
+foxBtn.onclick = ()=>{ const u=getCurrentUser(); window.open(u.playlist || 'https://t.me/your_help_link','_blank'); }
+
+/* ---------- Pay fine ---------- */
+payFineBtn.onclick = ()=>{ const u=getCurrentUser(); if((u.coins||0) >= 5){ u.coins -= 5; saveState(); renderAll(); notify('Штраф сплачено'); } else notify('Не вистачає лисинят'); }
+
+/* ---------- Theme / Background logic ---------- */
+let night = true;
+const dayLayer = document.getElementById('dayLayer');
+const nightLayer = document.getElementById('nightLayer');
+const slideshow = document.getElementById('slideshow');
+const starCanvas = document.getElementById('starCanvas');
+const earthWrap = document.getElementById('earthWrap');
+const scenic = [
+  'https://images.unsplash.com/photo-1501785888041-af3ef285b470?auto=format&fit=crop&w=1600&q=60',
+  'https://images.unsplash.com/photo-1469474968028-56623f02e42e?auto=format&fit=crop&w=1600&q=60',
+  'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=1600&q=60',
+  'https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?auto=format&fit=crop&w=1600&q=60'
+];
+// create slides
+scenic.forEach((src,i)=>{ const s = document.createElement('div'); s.className='slide'; s.style.backgroundImage = `url(${src})`; if(i===0) s.classList.add('show'); slideshow.appendChild(s); });
+let slideIndex = 0;
+setInterval(()=>{ const slides = document.querySelectorAll('.slide'); slides.forEach((s,idx)=>s.classList.remove('show')); slideIndex = (slideIndex+1)%slides.length; slides[slideIndex].classList.add('show'); }, 8000);
+
+function setTheme(isNight){
+  night = isNight;
+  if(night){ dayLayer.style.opacity = 0; nightLayer.style.opacity = 1; toggleTheme.textContent = 'Денний режим'; } else { dayLayer.style.opacity = 1; nightLayer.style.opacity = 0; toggleTheme.textContent = 'Нічний режим'; }
+}
+toggleTheme.onclick = ()=>{ setTheme(!night); }
+setTheme(true); // start night
+
+/* ---------- Stars and Earth (canvas) ---------- */
+function setupStars(){
+  starCanvas.width = window.innerWidth; starCanvas.height = window.innerHeight;
+  const ctx = starCanvas.getContext('2d');
+  const stars = [];
+  for(let i=0;i<240;i++){ stars.push({x:Math.random()*starCanvas.width, y:Math.random()*starCanvas.height, r:Math.random()*1.6, a:Math.random()*1, s:Math.random()*0.02+0.004}); }
+  function draw(){ ctx.clearRect(0,0,starCanvas.width,starCanvas.height); stars.forEach(s=>{ s.a += s.s; if(s.a>1) s.a=0; ctx.beginPath(); ctx.fillStyle = `rgba(255,255,255,${0.3 + 0.7*s.a})`; ctx.arc(s.x,s.y,s.r,0,Math.PI*2); ctx.fill(); }); requestAnimationFrame(draw); }
+  draw();
+}
+setupStars();
+window.addEventListener('resize', ()=>{ setupStars(); });
+
+// create rotating earth
+const earth = document.createElement('div'); earth.style.width='100%'; earth.style.height='100%'; earth.style.borderRadius='50%'; earth.style.overflow='hidden'; earth.style.transformOrigin='center center'; earth.style.animation='rotateSlow 80s linear infinite';
+const earthImg = document.createElement('img'); earthImg.src = 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/07/Blue_Marble.jpg/800px-Blue_Marble.jpg'; earthImg.style.width='160%'; earthImg.style.position='relative'; earthImg.style.left='-30%'; earthImg.style.top='-10%'; earth.appendChild(earthImg); earthWrap.appendChild(earth); earthWrap.style.opacity = 0.95;
+
+/* ---------- Exercise / MoveNet ---------- */
+let detector = null;
+async function ensureDetector(){ if(detector) return detector; detector = await poseDetection.createDetector(poseDetection.SupportedModels.MoveNet, {modelType: poseDetection.movenet.modelType.SINGLEPOSE_LIGHTNING}); return detector; }
+const video = document.createElement('video'); video.width=320; video.height=240; video.style.display='none'; document.body.appendChild(video);
+let stream=null;
+async function startCam(){ if(stream) return; try{ stream = await navigator.mediaDevices.getUserMedia({video:{width:320,height:240, facingMode:'user'}, audio:false}); video.srcObject = stream; await video.play(); await ensureDetector(); }catch(e){ alert('Помилка доступу до камери: ' + e.message); } }
+const exerciseCanvas = document.getElementById('exerciseCanvas'); const exCtx = exerciseCanvas.getContext('2d');
+let exState = {type:null, baseline:null, down:false, reps:0, walkSteps:0, lastMag:0};
+
+document.getElementById('choosePush').onclick = ()=>{ prepareExercise('push'); }
+document.getElementById('chooseSquat').onclick = ()=>{ prepareExercise('squat'); }
+document.getElementById('chooseWalk').onclick = ()=>{ prepareExercise('walk'); }
+
+async function prepareExercise(type){
+  exState.type = type; exState.reps = 0; exState.down=false; exState.baseline=null; repCountEl.textContent = '0';
+  if(type === 'walk'){
+    if(window.DeviceMotionEvent && typeof DeviceMotionEvent.requestPermission === 'function'){
+      DeviceMotionEvent.requestPermission().then(res=>{ if(res==='granted'){ startWalking(); } else alert('Дозвіл датчиків не надано'); }).catch(()=>{ alert('Помилка запиту дозволу датчиків'); });
+    } else if(window.DeviceMotionEvent){
+      startWalking();
+    } else {
+      alert('Датчики руху не доступні — симулюйте кроки натисканням "m" на клавіатурі');
+    }
+    return;
+  }
+  await startCam();
+  runExerciseLoop();
+}
+
+function startWalking(){ window.addEventListener('devicemotion', handleMotion); alert('Відстеження ходьби запущено — рухайся, щоб збирати лисинята'); }
+function handleMotion(e){ const acc = e.accelerationIncludingGravity || e.acceleration; if(!acc) return; const mag = Math.sqrt((acc.x||0)**2 + (acc.y||0)**2 + (acc.z||0)**2); if(!exState.lastMag) exState.lastMag = mag; if(mag - exState.lastMag > 1.2){ exState.walkSteps++; repCountEl.textContent = exState.walkSteps; if(exState.walkSteps % 30 === 0){ const u = getCurrentUser(); u.coins = (u.coins||0)+1; state.foxCoins = (state.foxCoins||0)+1; saveState(); renderProfile(); notify('Отримано 1 🦊 за ходьбу'); } } exState.lastMag = mag; }
+
+async function runExerciseLoop(){
+  if(!detector) await ensureDetector();
+  const poses = await detector.estimatePoses(video); exCtx.clearRect(0,0,exerciseCanvas.width,exerciseCanvas.height); exCtx.drawImage(video,0,0,exerciseCanvas.width,exerciseCanvas.height);
+  if(poses && poses.length>0){ const p = poses[0]; drawKeypoints(p.keypoints); if(exState.type==='push') handlePush(p); if(exState.type==='squat') handleSquat(p); }
+  requestAnimationFrame(runExerciseLoop);
+}
+
+function drawKeypoints(kps){ exCtx.fillStyle='rgba(122,200,255,0.9)'; kps.forEach(k=>{ if(k.score>0.4){ exCtx.beginPath(); exCtx.arc(k.x, k.y, 4,0,Math.PI*2); exCtx.fill(); } }); }
+
+function avgTorsoY(p){ const left_sh = p.keypoints.find(k=>k.name==='left_shoulder'); const right_sh = p.keypoints.find(k=>k.name==='right_shoulder'); const left_hip = p.keypoints.find(k=>k.name==='left_hip'); const right_hip = p.keypoints.find(k=>k.name==='right_hip'); const arr = []; [left_sh,right_sh,left_hip,right_hip].forEach(x=>{ if(x && x.score>0.3) arr.push(x.y); }); if(arr.length===0) return null; return arr.reduce((a,b)=>a+b,0)/arr.length; }
+
+function handlePush(p){
+  const y = avgTorsoY(p); if(y===null) return; if(exState.baseline===null) exState.baseline = y; const delta = y - exState.baseline; const DOWN=26, UP=14; if(!exState.down && delta > DOWN){ exState.down = true; } if(exState.down && delta < UP){ exState.down = false; exState.reps++; repCountEl.textContent = exState.reps; awardForRep(); } }
+
+function handleSquat(p){
+  const left_hip = p.keypoints.find(k=>k.name==='left_hip'); const right_hip = p.keypoints.find(k=>k.name==='right_hip'); const hipY = ((left_hip?.y||0)+(right_hip?.y||0))/2; if(exState.baseline===null) exState.baseline = hipY; const delta = exState.baseline - hipY; const DOWN=18, UP=10; if(!exState.down && delta > DOWN){ exState.down=true; } if(exState.down && delta < UP){ exState.down=false; exState.reps++; repCountEl.textContent = exState.reps; awardForRep(); } }
+
+function awardForRep(){ // small reward
+  if(exState.reps % 10 === 0){ const u = getCurrentUser(); u.coins = (u.coins||0) + 1; state.foxCoins = (state.foxCoins||0) + 1; saveState(); renderProfile(); notify('Отримано 1 🦊 за вправи!'); } saveState(); }
+
+/* ---------- Init / Render ---------- */
+function renderAll(){ renderFoods(); renderTasks(); renderUsers(); renderProfile(); repCountEl.textContent = '0'; }
+renderAll();
+
+/* ---------- UI interactions ---------- */
+document.getElementById('openLogin').onclick = ()=>{ const name = prompt('Введи ім\'я (локально):', getCurrentUser().name || 'Гість'); if(name){ getCurrentUser().name = name; saveState(); renderAll(); notify('Ім\'я збережено'); } }
+document.getElementById('addUserBtn').onclick = ()=>{ const name = newUserName.value.trim(); if(!name) return; state.users.push({id:randId(), name, coins:0, playlist:''}); newUserName.value=''; saveState(); renderAll(); }
+document.getElementById('payFineBtn').onclick = ()=>{ const u = getCurrentUser(); if((u.coins||0) >= 5){ u.coins -=5; saveState(); renderAll(); notify('Штраф сплачено'); } else alert('Не вистачає лисинят'); }
+document.getElementById('startNow').onclick = ()=>{ introModal.style.display='none'; }
+document.getElementById('closeIntro').onclick = ()=>{ introModal.style.display='none'; }
+document.getElementById('openIntro').onclick = ()=>{ introModal.style.display='flex'; }
+
+/* ---------- finalize ---------- */
+window.addEventListener('beforeunload', ()=>{ saveState(); });
+
+</script>
+</body>
+</html>
